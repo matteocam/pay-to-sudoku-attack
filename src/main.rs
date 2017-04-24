@@ -1,4 +1,4 @@
-#![feature(test)]
+// #![feature(test)]
 
 extern crate whiteread;
 extern crate libc;
@@ -9,7 +9,7 @@ extern crate hex;
 extern crate serde;
 extern crate clap;
 extern crate flate2;
-extern crate test;
+//extern crate test;
 extern crate strason;
 extern crate crypto;
 #[macro_use] extern crate jsonrpc;

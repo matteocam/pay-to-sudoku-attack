@@ -2,7 +2,7 @@ template<typename FieldT>
 sudoku_encryption_key<FieldT>::sudoku_encryption_key(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                pb_variable_array<FieldT> &seed_key
-                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sudoku_closure_gadget")),
+                                               ) : gadget<FieldT>(pb, FMT("", " sudoku_closure_gadget")),
                                                    seed_key(seed_key), dimension(dimension)
 {
     assert(seed_key.size() == (256-8));
@@ -96,7 +96,7 @@ template<typename FieldT>
 sudoku_closure_gadget<FieldT>::sudoku_closure_gadget(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                std::vector<pb_variable_array<FieldT>> &flags
-                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sudoku_closure_gadget")),
+                                               ) : gadget<FieldT>(pb, FMT("", " sudoku_closure_gadget")),
                                                    dimension(dimension), flags(flags)
 {
     assert(flags.size() == dimension);
@@ -128,7 +128,7 @@ template<typename FieldT>
 sudoku_cell_gadget<FieldT>::sudoku_cell_gadget(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                pb_linear_combination<FieldT> &number
-                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sudoku_cell_gadget")),
+                                               ) : gadget<FieldT>(pb, FMT("", " sudoku_cell_gadget")),
                                                    number(number), dimension(dimension)
 {
     flags.allocate(pb, dimension, "flags for each possible number");
@@ -160,7 +160,7 @@ void sudoku_cell_gadget<FieldT>::generate_r1cs_witness()
 
 template<typename FieldT>
 sudoku_gadget<FieldT>::sudoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
-        gadget<FieldT>(pb, FMT(annotation_prefix, " l_gadget"))
+        gadget<FieldT>(pb, FMT("", " l_gadget"))
 {
     dimension = n * n;
 
@@ -249,7 +249,7 @@ sudoku_gadget<FieldT>::sudoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
                                                           "H(K)"));
 
     assert(input_as_bits.size() == input_size_in_bits);
-    unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
+    unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT("", " unpack_inputs")));
 }
 
 template<typename FieldT>

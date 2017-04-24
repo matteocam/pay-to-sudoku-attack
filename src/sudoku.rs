@@ -238,6 +238,7 @@ impl Sudoku {
     }
 }
 
+/*
 mod test {
     use super::Sudoku;
     use test::Bencher;
@@ -250,3 +251,4 @@ mod test {
         });
     }
 }
+*/
