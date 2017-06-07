@@ -1,0 +1,3 @@
+[submodule "malicious-libsnark"]
+	path = malicious-libsnark
+	url = https://github.com/matteocam/malicious-libsnark.git

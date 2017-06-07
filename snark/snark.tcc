@@ -1,6 +1,8 @@
 #include "gadget.hpp"
 #include "sha256.h"
 
+#include <fstream>
+#include <iostream>
 using namespace std;
 
 std::vector<std::vector<bool>> convertPuzzleToBool(std::vector<uint8_t> puzzle) {
@@ -100,8 +102,23 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair(uint32_t n)
     const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
 
     cout << "Number of R1CS constraints: " << constraint_system.num_constraints() << endl;
+		
+    return malicious_r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
+}
 
-    return r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
+template<typename ppzksnark_ppT>
+r1cs_ppzksnark_keypair<ppzksnark_ppT> malicious_generate_keypair(uint32_t n)
+{
+    typedef Fr<ppzksnark_ppT> FieldT;
+
+    protoboard<FieldT> pb;
+    sudoku_gadget<FieldT> g(pb, n);
+    g.generate_r1cs_constraints();
+    const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
+
+    cout << "Number of R1CS constraints: " << constraint_system.num_constraints() << endl;
+		
+    return malicious_r1cs_ppzksnark_generator<ppzksnark_ppT>(constraint_system);
 }
 
 template<typename ppzksnark_ppT>
@@ -152,4 +169,36 @@ bool verify_proof(uint32_t n,
     const r1cs_primary_input<FieldT> input = sudoku_input_map<FieldT>(n, new_puzzle, h_of_key, encrypted_solution);
 
     return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(verification_key, input, proof);
+}
+
+template<typename ppzksnark_ppT>
+bool malicious_verify_proof(uint32_t n,
+                  r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
+                  r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
+                  vector<uint8_t> &puzzle,
+                  vector<bool> &h_of_key,
+                  std::vector<std::vector<bool>> &encrypted_solution
+                 )
+{
+    typedef Fr<ppzksnark_ppT> FieldT;
+
+    auto new_puzzle = convertPuzzleToBool(puzzle);
+
+    const r1cs_primary_input<FieldT> input = sudoku_input_map<FieldT>(n, new_puzzle, h_of_key, encrypted_solution);
+
+    bool wire_res = malicious_r1cs_ppzksnark_verifier<ppzksnark_ppT>(verification_key, input, proof);
+    
+    ifstream wire_f("attacked_wire");
+    unsigned wire_idx;
+    wire_f >> wire_idx;
+    wire_f.close();
+    
+    if (wire_res) {
+			cout << "Wire " << wire_idx << " has value 1" << endl;
+	  } else {
+			cout << "Nothing could be found on wire " << wire_idx << endl;
+		}
+		
+		return true;
+
 }

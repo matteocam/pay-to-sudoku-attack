@@ -1,7 +1,7 @@
-#include "libsnark/gadgetlib1/gadgets/basic_gadgets.hpp"
-#include "libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
-#include "libsnark/common/default_types/r1cs_ppzksnark_pp.hpp"
-#include "libsnark/common/utils.hpp"
+#include "libsnarkattack/gadgetlib1/gadgets/basic_gadgets.hpp"
+#include "libsnarkattack/zk_proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp"
+#include "libsnarkattack/common/default_types/r1cs_ppzksnark_pp.hpp"
+#include "libsnarkattack/common/utils.hpp"
 #include <boost/optional.hpp>
 
 using namespace libsnark;
@@ -86,6 +86,9 @@ template<typename ppzksnark_ppT>
 r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair();
 
 template<typename ppzksnark_ppT>
+r1cs_ppzksnark_keypair<ppzksnark_ppT> malicious_generate_keypair();
+
+template<typename ppzksnark_ppT>
 boost::optional<std::tuple<r1cs_ppzksnark_proof<ppzksnark_ppT>,std::vector<std::vector<bool>>>>
   generate_proof(uint32_t n,
                  r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
@@ -103,5 +106,16 @@ bool verify_proof(uint32_t n,
                   std::vector<bool> &h_of_key,
                   std::vector<std::vector<bool>> &encrypted_solution
                  );
+                 
+
+template<typename ppzksnark_ppT>
+bool malicious_verify_proof(uint32_t n,
+                  r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
+                  r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
+                  std::vector<uint8_t> &puzzle,
+                  std::vector<bool> &h_of_key,
+                  std::vector<std::vector<bool>> &encrypted_solution
+                 );
+                 
 
 #include "snark.tcc"

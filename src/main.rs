@@ -58,13 +58,13 @@ fn main() {
 
     let matches = App::new("pay-to-sudoku")
                   .subcommand(SubCommand::with_name("gen")
-                              .about("Generates a proving/verifying zkSNARK keypair")
+                              .about("Generates a malicious proving/verifying zkSNARK keypair")
                               .arg(Arg::with_name("n")
                                    .required(true)
                                    .validator(is_number))
                   )
-                  .subcommand(SubCommand::with_name("test")
-                              .about("Creates, solves, proves and verifies")
+                   .subcommand(SubCommand::with_name("test")
+                              .about("Creates a malicious key, solves, proves and finds information from the proof")
                               .arg(Arg::with_name("n")
                                    .required(true)
                                    .validator(is_number))
@@ -145,6 +145,7 @@ fn main() {
         }
     }
 
+   
     if let Some(ref matches) = matches.subcommand_matches("test") {
         println!("Loading proving/verifying keys...");
         let n: usize = matches.value_of("n").unwrap().parse().unwrap();
@@ -174,7 +175,7 @@ fn main() {
 
             println!("Generating proof...");
 
-            assert!(prove(&ctx, &puzzle, &solution, &key, &h_of_key,
+            assert!(evil_test(&ctx, &puzzle, &solution, &key, &h_of_key,
               |encrypted_solution, proof| {}));
         }
     }

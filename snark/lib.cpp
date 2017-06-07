@@ -1,4 +1,5 @@
 #include <stdlib.h>
+
 #include "snark.hpp"
 
 typedef void (*keypair_callback)(void*, const char*, size_t, const char*, size_t);
@@ -30,6 +31,21 @@ extern "C" void mysnark_init_public_params() {
 
 extern "C" void gen_keypair(uint32_t n, void* h, keypair_callback cb) {
     auto keypair = generate_keypair<default_r1cs_ppzksnark_pp>(n);
+
+    std::stringstream provingKey;
+    provingKey << keypair.pk;
+    std::string pk = provingKey.str();
+
+    std::stringstream verifyingKey;
+    verifyingKey << keypair.vk;
+    std::string vk = verifyingKey.str();
+
+    cb(h, pk.c_str(), pk.length(), vk.c_str(), vk.length());
+}
+
+
+extern "C" void malicious_gen_keypair(uint32_t n, void* h, keypair_callback cb) {
+    auto keypair = malicious_generate_keypair<default_r1cs_ppzksnark_pp>(n);
 
     std::stringstream provingKey;
     provingKey << keypair.pk;
@@ -106,6 +122,48 @@ extern "C" bool gen_proof(void *keypair, void* h, proof_callback cb, uint32_t n,
     }
 }
 
+extern "C" bool prove_malicious_verify(void *keypair, void* h, proof_callback cb, uint32_t n, uint8_t* puzzle, uint8_t* solution, uint8_t* input_key, uint8_t* input_h_of_key) {
+    auto our_keypair = reinterpret_cast<r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>*>(keypair);
+
+    vector<uint8_t> new_puzzle(puzzle, puzzle+(n*n*n*n));
+    vector<uint8_t> new_solution(solution, solution+(n*n*n*n));
+
+    vector<unsigned char> v_input_key(input_key, input_key+32);
+    vector<unsigned char> v_input_h_of_key(input_h_of_key, input_h_of_key+32);
+
+    vector<bool> key;
+    vector<bool> h_of_key;
+
+    convertBytesVectorToVector(v_input_key, key);
+    convertBytesVectorToVector(v_input_h_of_key, h_of_key);
+
+    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(n, our_keypair->pk, new_puzzle, new_solution, key, h_of_key);
+
+    if (!proof) {
+        return false;
+    } else {
+        auto actual_proof = std::get<0>(*proof);
+        auto encrypted_solution = std::get<1>(*proof);
+
+        auto encrypted_solution_formatted = convertBoolToPuzzle(encrypted_solution);
+        std::string proof_serialized;
+        {
+            std::stringstream ss;
+            ss << actual_proof;
+            proof_serialized = ss.str();
+        }
+
+        malicious_verify_proof(n, our_keypair->vk, actual_proof, new_puzzle, h_of_key, encrypted_solution);
+
+
+        // ok
+        cb(h, n, &encrypted_solution_formatted[0], proof_serialized.c_str(), proof_serialized.length());
+
+        return true;
+    }
+}
+
+
 extern "C" bool snark_verify(void *keypair,
                              uint32_t n,
                              const char* proof,
@@ -134,4 +192,35 @@ extern "C" bool snark_verify(void *keypair,
     auto enc_sol_new = convertPuzzleToBool(encrypted_solution);
 
     return verify_proof(n, our_keypair->vk, deserialized_proof, new_puzzle, h_of_key, enc_sol_new);
+}
+
+extern "C" bool malicious_snark_verify(void *keypair,
+                             uint32_t n,
+                             const char* proof,
+                             int32_t proof_len,
+                             uint8_t* puzzle,
+                             uint8_t* input_h_of_key,
+                             uint8_t* enc_solution
+                             )
+{
+    auto our_keypair = reinterpret_cast<r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>*>(keypair);
+
+    vector<uint8_t> new_puzzle(puzzle, puzzle+(n*n*n*n));
+    vector<uint8_t> encrypted_solution(enc_solution, enc_solution+(n*n*n*n));
+    vector<unsigned char> input_h_of_key_v(input_h_of_key, input_h_of_key+32);
+
+    vector<bool> h_of_key;
+    convertBytesVectorToVector(input_h_of_key_v, h_of_key);
+
+    r1cs_ppzksnark_proof<default_r1cs_ppzksnark_pp> deserialized_proof;
+
+    std::string proof_s(proof, proof+proof_len);
+    std::stringstream ss;
+    ss.str(proof_s);
+    ss >> deserialized_proof;
+
+    auto enc_sol_new = convertPuzzleToBool(encrypted_solution);
+
+    return malicious_verify_proof(n, our_keypair->vk, deserialized_proof, new_puzzle, h_of_key, enc_sol_new);
+
 }
